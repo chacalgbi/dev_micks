@@ -8,6 +8,7 @@ class HomeController{
     async show(req, res){
         Home.findOne({}).then((home) => {
             Rodape.findOne({}).then((rodape) =>{
+                console.log("Acessou Show")
                 return res.json({
                     error: false,
                     home: home,

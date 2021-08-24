@@ -2,10 +2,12 @@ import User from '../models/User';
 import * as yup from 'yup';
 import bcrypt from 'bcryptjs';
 import { validateCPF, validatePhone, validateEmail } from 'validations-br';
+import Rodape from '../models/Rodape';
+
 class UserControler{
 
     async store(req, res){
-
+        console.log('Acessou o CADASTRAR de Usuários');
         const validate_cpf   = req.body.cpf;
         const validate_tel   = req.body.telefone;
         const validate_email = req.body.email;
@@ -14,19 +16,19 @@ class UserControler{
         const emailValid = validateEmail(validate_email);
 
         if(!cpfValid){
-            return res.status(400).json({
+            return res.status(200).json({
                 error: true,
                 code: 103,
                 message: "Error: O CPF digitado não é válido. EX: 245.547.241-45"
             });
         }else if(!telValid){
-            return res.status(400).json({
+            return res.status(200).json({
                 error: true,
                 code: 103,
                 message: "Error: O TELEFONE digitado não é válido. EX: (77) 99987-8877"
             });
         }else if(!emailValid){
-            return res.status(400).json({
+            return res.status(200).json({
                 error: true,
                 code: 103,
                 message: "Error: O EMAIL digitado não é válido. EX: teste@gmail.com"
@@ -44,7 +46,7 @@ class UserControler{
           });
 
           if(!(await schema.isValid(req.body))){
-            return res.status(400).json({
+            return res.status(200).json({
                 error: true,
                 code: 103,
                 message: "Error: Dados inválidos ou incompletos!"
@@ -53,7 +55,7 @@ class UserControler{
 
         const emailExiste = await User.findOne({email: req.body.email});
         if(emailExiste){
-            return res.status(400).json({
+            return res.status(200).json({
                 error: true,
                 code: 102,
                 message: "Error: Email já existe no Banco de Dados!"
@@ -66,7 +68,7 @@ class UserControler{
 
         // Depois de todas as validações, inserir no BD
         const user = await User.create(dados, (err) =>{
-            if(err) return res.status(400).json({
+            if(err) return res.status(200).json({
                 error: true,
                 code: 101,
                 message: "Error: Usuário não foi cadastrado"
@@ -78,10 +80,13 @@ class UserControler{
                 dados: user
             });
         });
+        
+    }catch(error){
+        console.log("Error ", error)
     }
 
     async delete(req, res){
-        console.log(req.userId);
+        console.log('Acessou o DELETAR Usuários');
         const usuarioExiste = await User.findOne({_id: req.params.id});
         if(!usuarioExiste){
             return res.status(400).json({
@@ -104,12 +109,15 @@ class UserControler{
     }
 
     async index(req,res){
+        console.log('Acessou o LISTAR de Usuários');
+        const rodape = await Rodape.findOne({});
         const {page = 1} = req.query; // Se não receber page, define padrão 1
         const {limit = 20} = req.query;  // Se não receber limit, define padrão 20
-        await User.paginate({}, {select: '_id nome email telefone cidade', page: page, limit: limit}).then((users)=>{
+        await User.paginate({}, {select: '_id nome email cpf telefone endereco cidade', page: page, limit: limit}).then((users)=>{
             return res.json({
                 error: false,
-                users: users
+                users: users,
+                rodape: rodape
             });
         }).catch((erro)=>{
             return res.status(400).json({
@@ -136,6 +144,35 @@ class UserControler{
     }
 
     async update(req, res){
+        console.log('Acessou o EDITAR Usuários');
+
+        const validate_cpf   = req.body.cpf;
+        const validate_tel   = req.body.telefone;
+        const validate_email = req.body.email;
+        const cpfValid   = validateCPF(validate_cpf);
+        const telValid   = validatePhone(validate_tel);
+        const emailValid = validateEmail(validate_email);
+
+        if(!cpfValid){
+            return res.status(200).json({
+                error: true,
+                code: 103,
+                message: "Error: O CPF digitado não é válido. EX: 245.547.241-45"
+            });
+        }else if(!telValid){
+            return res.status(200).json({
+                error: true,
+                code: 103,
+                message: "Error: O TELEFONE digitado não é válido. EX: (77) 99987-8877"
+            });
+        }else if(!emailValid){
+            return res.status(200).json({
+                error: true,
+                code: 103,
+                message: "Error: O EMAIL digitado não é válido. EX: teste@gmail.com"
+            });
+        }
+
         let schema = yup.object().shape({
             _id: yup.string().required(),
             nome: yup.string().min(5),
@@ -148,7 +185,7 @@ class UserControler{
           });
 
           if(!(await schema.isValid(req.body))){
-            return res.status(400).json({
+            return res.status(200).json({
                 error: true,
                 code: 108,
                 message: "Error: Dados do formulário inválidos ou incompletos!"
@@ -158,7 +195,8 @@ class UserControler{
           const { _id, email } = req.body;
           const temUsuario = await User.findOne({_id: _id});
           if(!temUsuario){
-              return res.status(400).json({
+            console.log('Erro: Usuário não encontrado');
+              return res.status(200).json({
                   error: true,
                   code: 109,
                   message: "Erro: Usuário não encontrado"
@@ -169,7 +207,8 @@ class UserControler{
           if(email != temUsuario.email){
             const jaExiste = await User.findOne({email}); // procura se já tem o email no BD
             if(jaExiste){
-                return res.status(400).json({
+                console.log('Erro: Este email já está cadastrado!');
+                return res.status(200).json({
                     error: true,
                     code: 110,
                     message: "Erro: Este email já está cadastrado!"
@@ -184,13 +223,14 @@ class UserControler{
 
           await User.updateOne({_id: dados._id}, dados, (err) => {
               if(err){
-                return res.status(400).json({
+                console.log('Erro: Não foi possível editar o usuário');
+                return res.status(200).json({
                     error: true,
                     code: 111,
                     message: "Erro: Não foi possível editar o usuário"
                 });
               }
-
+              console.log('Usuário Editado com sucesso!');
               return res.json({
                 error: false,
                 message: "Usuário Editado com sucesso!"

@@ -23,8 +23,8 @@ routes.post('/login', LoginController.store);
 routes.get('/users', UserController.index);
 routes.get('/users/:id', UserController.show);
 routes.post('/users', UserController.store);
-routes.put('/users', authMiddleware, UserController.update);
-routes.delete('/users/:id', authMiddleware, UserController.delete);
+routes.put('/users', UserController.update);
+routes.delete('/users/:id', UserController.delete);
 
 //Rotas de Perfil
 routes.get('/perfil', authMiddleware, PerfilController.show);

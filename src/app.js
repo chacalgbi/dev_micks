@@ -13,13 +13,7 @@ class App{
     }
     middlewares(){
         this.app.use(express.json());
-        this.app.use((req, res, next) =>{
-            res.header("Access-Control-Allow-Origin", "*"); // Qualqer URL
-            res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
-
-            this.app.use(cors());
-            next();
-        });
+        this.app.use(cors());
     }
     routes(){
         this.app.use(routes);
